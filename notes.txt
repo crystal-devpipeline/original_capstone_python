@@ -1,0 +1,252 @@
+#STUDENT REG APPLICATION
+import sqlite3
+connection = sqlite3.connect("student_reg_application.db")
+cursor = connection.cursor()
+from datetime import datetime
+
+def create_record():
+   first_name = input("Enter first name: ")
+   last_name = input("Enter last name: ")
+   email = input("Enter email: ")
+   phone = input("Enter phone number: ")
+   password = input("Create Password: ")
+   address = input("Enter street address: ")
+   city = input("Enter city: ")
+   state = input("Enter state: ")
+   zip = input("Enter zip: ")
+   values = (first_name,last_name,email,phone,password,address,city,state,zip)
+   insert_into_sql = "INSERT INTO People(first_name,last_name,email,phone,password,address,city,state,postal) VALUES(?,?,?,?,?,?,?,?,?);"
+   cursor.execute(insert_into_sql,values)
+   connection.commit()
+   return print("Record Created")
+   
+
+def create_course():
+   course_name = input("Enter name of course: ")
+   description = input("Enter brief description of course: ")
+   values = (course_name, description)
+   insert_into_sql = "INSERT INTO Courses(name,description) VALUES(?,?);"
+   cursor.execute(insert_into_sql,values)
+   connection.commit()
+   return print("Course Created")
+
+
+def create_cohort():
+   course_id=input("Enter the course id: ")
+   instructor_id = input("Enter the instructor id: ")
+   start_date = input("Enter start date of Cohort: (YYYY-MM-DD)")
+   end_date = input("Enter end date of Cohort:(YYYY-MM-DD)")
+
+   values = (course_id, instructor_id, start_date,end_date)
+   insert_into_sql = "INSERT INTO Cohorts(course_id, instructor_id, start_date,end_date) VALUES(?,?,?,?);"
+   cursor.execute(insert_into_sql,values)
+   connection.commit()
+   return print("Cohort Created")
+
+def register_student_in_course():
+    person_id = input("Enter the id of the student to register: ")
+    cohort_id = input("Enter the id of the cohort to register: ")
+    values =(person_id, cohort_id, datetime.now())
+    insert_into_sql = "INSERT INTO Cohort_Reg (person_id, cohort_id, registration_date) VALUES(?,?,?);"
+    cursor.execute(insert_into_sql,values)
+    connection.commit()
+    return print("Cohort Registration created")
+
+
+def view_people(showInactive):
+    if (showInactive):
+        select_sql= "SELECT * FROM People"
+    else:
+        select_sql= "SELECT * FROM People where active = 1"
+    cursor.execute(select_sql)
+    rows = cursor.fetchall()
+    print(f"{'ID':<4}{'First Name':<15}{'Last Name':<16}{'Email':<25}{'Phone':<20}{'Password':<20}{'Address':<20}{'City':<12}{'State':<8}{'Zip':<8}{'Active':<4}")
+    print("-----------------------------------------------------------------------------------------------------------------------------------------------------------\n")
+    for row in rows:
+        print(f"{row[0]:<4}{row[1]:<15}{row[2]:<16}{row[3]:<25}{row[4]:<20}{row[5]:<20}{row[6]:<20}{row[7]:<12}{row[8]:<8}{row[9]:<8}{row[10]:<4}\n")
+
+def view_courses(showInactive):
+    if (showInactive):
+        select_sql= "SELECT * FROM Courses"
+    else:
+        select_sql= "SELECT * FROM Courses where active = 1"
+    cursor.execute(select_sql)
+    rows = cursor.fetchall()
+    print(f"{'Course ID':<12}{'Name':<16}{'Description'}")
+    print('------------------------------------------------------')
+    for row in rows:
+        print(f"{row[0]:<12}{row[1]:<16}{row[2]}")
+
+def view_cohorts(showInactive):
+    if (showInactive):
+        select_sql= "SELECT * FROM Cohorts"
+    else:
+        select_sql= "SELECT * FROM Cohorts where active = 1"
+    cursor.execute(select_sql)
+    rows = cursor.fetchall()
+    print(f"{'Cohort ID':<12}{'Instructor ID':<16}{'Course ID':<12}{'Start Date':<14}{'End date':<14}{'Active'}")
+    print('---------------------------------------------------------------------------')
+    for row in rows:
+        print(f"{row[0]:<12}{row[1]:<16}{row[2]:<12}{row[3]:<14}{row[4]:<14}{row[5]}")
+
+def view_cohort_registration(showInactive):
+    if (showInactive):
+        select_sql= "SELECT * FROM Cohort_Reg"
+    else:
+        select_sql= "SELECT * FROM Cohort_Reg where active = 1"
+    cursor.execute(select_sql)
+    rows = cursor.fetchall()
+    print(f"{'Student ID':<12}{'Cohort ID':<12}{'Registration Date':<30}{'Completion date':<30}{'Drop date':<30}{'Active'}")
+    print('-------------------------------------------------------------------------------------------------------------------------')
+    for row in rows:
+        student_id = row[0] if row[0] is not None else''
+        cohort_id = row[1] if row[1] is not None else''
+        registration_date = row[2] if row[2] is not None else''
+        completion_date = row[3] if row[3] is not None else''
+        drop_date = row[4] if row[4] is not None else''
+        active = row[5] if row[5] is not None else''
+        
+        print(f"{student_id:<12}{cohort_id:<12}{registration_date:<30}{completion_date:<30}{drop_date:<30}{active}")
+
+def drop_course_for_student():
+    person_id = input("Enter student id: ")
+    cohort_id = input("Enter cohort id: ")
+    update_sql = "UPDATE Cohort_Reg SET active=0, drop_date= ? WHERE person_id = ? AND cohort_id = ?"
+    values = (datetime.now(), person_id, cohort_id)
+    cursor.execute(update_sql, values)
+    connection.commit()
+    return print("Student has been dropped from course")
+
+def complete_course_for_student():
+    person_id = input("Enter student id: ")
+    cohort_id = input("Enter cohort id: ")
+    update_sql = "UPDATE Cohort_Reg SET completion_date= ? WHERE person_id = ? AND cohort_id = ?"
+    values = (datetime.now(), person_id, cohort_id)
+    cursor.execute(update_sql, values)
+    connection.commit()
+    return print("Student has completed course")
+
+def deactivate_course():
+    course_id = input("Enter course id: ")
+    update_sql = "UPDATE Courses SET active=0 WHERE course_id = ?"
+    values = (course_id,)
+    cursor.execute(update_sql, values)
+    connection.commit()
+    return print("Course deactivated")
+
+def deactivate_person():
+    person_id = input("Enter student/faculty id: ")
+    update_sql = "UPDATE People SET active=0 WHERE person_id = ?"
+    values = (person_id,)
+    cursor.execute(update_sql, values)
+    connection.commit()
+    return print("Student/faculty deactivated")
+
+def deactivate_cohort():
+    cohort_id = input("Enter cohort id: ")
+    update_sql = "UPDATE Cohorts SET active=0 WHERE cohort_id = ?"
+    values = (cohort_id,)
+    cursor.execute(update_sql, values)
+    connection.commit()
+    return print("Cohort deactivated")
+
+def reactivate_course():
+    course_id = input("Enter course id: ")
+    update_sql = "UPDATE Courses SET active=1 WHERE course_id = ?"
+    values = (course_id,)
+    cursor.execute(update_sql, values)
+    connection.commit()
+    return print("Course reactivated")
+
+def reactivate_person():
+    person_id = input("Enter student/faculty id: ")
+    update_sql = "UPDATE People SET active=1 WHERE person_id = ?"
+    values = (person_id,)
+    cursor.execute(update_sql, values)
+    connection.commit()
+    return print("Student/faculty reactivated")
+
+def reactivate_cohort():
+    cohort_id = input("Enter cohort id: ")
+    update_sql = "UPDATE Cohorts SET active=1 WHERE cohort_id = ?"
+    values = (cohort_id,)
+    cursor.execute(update_sql, values)
+    connection.commit()
+    return print("Cohort reactivated")
+
+def reactivate_registration():
+    person_id = input("Enter student/faculty id: ")
+    cohort_id = input("Enter cohort id: ")
+    update_sql = "UPDATE Cohort_Reg SET active=1, drop_date='', registration_date=? WHERE person_id = ? AND cohort_id = ?"
+    values = (datetime.now(), person_id, cohort_id)
+    cursor.execute(update_sql, values)
+    connection.commit()
+    return print("Registration is reactivated")
+
+while True:
+    print("\n********* MAIN MENU *********\n")
+    print("[1] View Faculty/Student Records")
+    print("[2] View Cohorts")
+    print("[C] View Courses")
+    print("[3] View Cohort Registrations")
+    print("[4] Create Faculty/Student Record")
+    print("[5] Create Course")
+    print("[6] Create Cohort")
+    print("[7] Register Course for Student")
+    print("[8] Drop Course for Student")
+    print("[9] Complete Course for Student")
+    print("[D] Deactivate record")
+    print("[R] Reactivate record")
+    print("[Q] Quit")
+    prompt=input("").lower() 
+    if prompt== "1":
+        includeInactive = input("Include inactive student/faculty? Default is hidden (Y/N)").lower() == "y"
+        view_people(includeInactive)        
+    elif prompt=="2":
+        includeInactive = input("Include inactive cohorts? Default is hidden (Y/N)").lower() == "y"
+        view_cohorts(includeInactive)
+    elif prompt=="c":
+        includeInactive = input("Include inactive courses? Default is hidden (Y/N)").lower() == "y"
+        view_courses(includeInactive)
+    elif prompt=="3":
+        includeInactive = input("Include inactive course registrations? Default is hidden (Y/N)").lower() == "y"
+        view_cohort_registration(includeInactive)
+    elif prompt=="4":
+        create_record()
+    elif prompt=="5":
+        create_course()
+    elif prompt=="6":
+        create_cohort()
+    elif prompt=="7":
+        register_student_in_course()
+    elif prompt=="8":
+        drop_course_for_student()
+    elif prompt=="9":
+        complete_course_for_student()
+    elif prompt=="d":
+        prompt_2=input("What record would you like to deactivate?:\n(C)ourse\n(P)erson\nC(o)hort\n").lower()
+        if prompt_2=="c":
+            deactivate_course()
+        elif prompt_2=="p":
+            deactivate_person()
+        elif prompt_2=="o":
+            deactivate_cohort()
+        else:
+            print("Invalid option")
+    elif prompt=="r":
+        prompt_2=input("What record would you like to reactivate?:\n(C)ourse\n(P)erson\nC(o)hort\n(S)tudent Registration\n").lower()
+        if prompt_2=="c":
+            reactivate_course()
+        elif prompt_2=="p":
+            reactivate_person()
+        elif prompt_2=="o":
+            reactivate_cohort()
+        elif prompt_2=="s":
+            reactivate_registration()
+        else:
+            print("Invalid option")
+    elif prompt=="q":
+        break
+    else:
+        print("Please enter valid input")
+
